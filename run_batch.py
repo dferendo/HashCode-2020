@@ -1,4 +1,5 @@
 import glob
+from statistics import median
 
 
 class GeneralInformation:
@@ -41,6 +42,28 @@ def parse_inputs(input_file):
         all_libraries.append(Library(first_line[0], first_line[1], first_line[2], second_line))
 
     return general_info, all_libraries
+
+
+def get_book_scores(all_book_scores, library_books):
+    return [all_book_scores[b] for b in library_books]
+
+
+def sort_list_and_keep_indices(values, indexes, reverse=True):
+    return zip(*sorted(zip(values, indexes), reverse=reverse))
+
+
+def sort_libraries(general_info, all_libraries):
+    library_score = []
+
+    for library in all_libraries:
+        book_scores = get_book_scores(general_info.book_scores, library.books_in_library)
+
+        m_score = (median(book_scores)) / library.sign_up_time
+        library_score.append(m_score)
+
+    highest_scores, indexes = sort_list_and_keep_indices(library_score, range(0, len(library_score)))
+
+    return highest_scores, indexes
 
 
 def run_main(input_file):
