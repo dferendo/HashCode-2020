@@ -1,5 +1,6 @@
 import glob
 from statistics import median
+import os
 
 
 class GeneralInformation:
@@ -69,6 +70,28 @@ def sort_libraries(general_info, all_libraries):
     return highest_scores, indexes
 
 
+def sort_libraries_1(general_info, all_libraries):
+    library_score = []
+
+    for library in all_libraries:
+        book_scores = get_book_scores(general_info.book_scores, library.books_in_library)
+
+        m_score = max(book_scores)
+        score = m_score / ((library.sign_up_time ** (4 / 3)) * (library.books_send_per_day ** (-2 / 3)))
+        library_score.append(score)
+
+    highest_scores, indexes = sort_list_and_keep_indices(library_score, range(0, len(library_score)))
+
+    return highest_scores, indexes
+
+
+def sort_libraries_2(general_info, all_libraries):
+    all_libraries_values = [x.total_amount_of_books for x in all_libraries]
+    highest_scores, indexes = sort_list_and_keep_indices(all_libraries_values, range(0, len(all_libraries_values)))
+
+    return highest_scores, indexes
+
+
 def send_books(general_info, all_libraries, sorted_libraries_indexes):
     # Library signup variables
     active_libraries = []
@@ -123,8 +146,8 @@ def send_books(general_info, all_libraries, sorted_libraries_indexes):
     return active_libraries, libraries_with_sent_books
 
 
-def output(ordered_libraries, libraries_with_sent_books, count_out):
-    with open(f'output/output{count_out}.txt', 'w') as file:
+def output(ordered_libraries, libraries_with_sent_books, output_location, input_file):
+    with open(f'{output_location}/output_{input_file}.txt', 'w') as file:
         file.write(str(len(libraries_with_sent_books)) + '\n')
 
         for signed_up_library in ordered_libraries:
@@ -135,16 +158,22 @@ def output(ordered_libraries, libraries_with_sent_books, count_out):
             file.write(' '.join(map(str, libraries_with_sent_books[signed_up_library.index])) + '\n')
 
 
-def run_main(input_file, index):
+def run_main(input_file, sort_function, output_location):
     general_info, all_libraries = parse_inputs(input_file)
     assert general_info.total_amount_of_libraries == len(all_libraries)
 
-    _, indexes = sort_libraries(general_info, all_libraries)
+    _, indexes = sort_function(general_info, all_libraries)
     ordered_libraries, libraries_with_sent_books = send_books(general_info, all_libraries, indexes)
 
-    output(ordered_libraries, libraries_with_sent_books, index)
+    output(ordered_libraries, libraries_with_sent_books, output_location, os.path.splitext(os.path.basename(input_file))[0])
 
 
 if __name__ == '__main__':
     for index, file in enumerate(glob.glob("./input/*.txt")):
-        run_main(file, index)
+        run_main(file, sort_libraries, 'output', index)
+
+    for index, file in enumerate(glob.glob("./input/*.txt")):
+        run_main(file, sort_libraries_1, 'output_1')
+
+    for index, file in enumerate(glob.glob("./input/*.txt")):
+        run_main(file, sort_libraries_2, 'output_2')
